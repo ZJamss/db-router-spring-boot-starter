@@ -1,10 +1,10 @@
 # db-router
-a mini library about sharding database for java
+用于Java操作数据库分库分表的迷你库
 
-# Tutorial
-## install
-clone the code to your local environment and then install it by Maven.
-## dependency
+# 教程
+## 
+克隆代码到本地，然后通过Maven安装
+## 依赖
 ```xml
      <dependency>
                 <groupId>cn.zjamss.middleware</groupId>
@@ -12,17 +12,17 @@ clone the code to your local environment and then install it by Maven.
                 <version>1.0-SNAPSHOT</version>
      </dependency>
 ```
-## Example
+## 案例
 ### UserMapper.java
 ```java
 /**
-* Sharding tables based on the column of the @DataBaseRouter in this Class.
+* 开启分库
 */
 @DataBaseStrategyRouter(splitTable = true)
 @Mapper
 public interface UserMapper {
     /**
-     * Sharding database based on the "uId" field of the User.
+     * 此方法基于uId进行分库
      */
     @DataBaseRouter(column = "uId")
     void insert(UserPO user);
