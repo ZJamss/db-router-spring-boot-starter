@@ -1,6 +1,6 @@
 package cn.zjamss.middleware.db.router;
 
-import cn.zjamss.middleware.db.router.annotation.DataBaseRouter;
+import cn.zjamss.middleware.db.router.annotation.DBRouter;
 import cn.zjamss.middleware.db.router.strategy.IDataBaseRouterStrategy;
 import java.lang.reflect.Field;
 import org.apache.commons.lang.StringUtils;
@@ -31,13 +31,13 @@ public class DataBaseRouterJoinPoint {
         this.dataBaseStrategy = dataBaseStrategy;
     }
 
-    @Pointcut("@annotation(cn.zjamss.middleware.db.router.annotation.DataBaseRouter)")
+    @Pointcut("@annotation(cn.zjamss.middleware.db.router.annotation.DBRouter)")
     public void aopPoint() {
     }
 
 
     @Around("aopPoint() && @annotation(router)")
-    public Object around(ProceedingJoinPoint joinPoint, DataBaseRouter router) throws Throwable {
+    public Object around(ProceedingJoinPoint joinPoint, DBRouter router) throws Throwable {
         String column = router.column();
         if (StringUtils.isBlank(column)) {
             throw new RuntimeException("@DataBaseRouter column is blank！");

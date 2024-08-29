@@ -1,7 +1,7 @@
 package cn.zjamss.middleware.db.router.dynamic;
 
 import cn.zjamss.middleware.db.router.DataBaseContextHolder;
-import cn.zjamss.middleware.db.router.annotation.DataBaseStrategyRouter;
+import cn.zjamss.middleware.db.router.annotation.TableRouter;
 import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.util.regex.Matcher;
@@ -25,7 +25,7 @@ import org.apache.ibatis.reflection.SystemMetaObject;
     Integer.class})})
 public class DynamicMybatisPlugin implements Interceptor {
 
-    private Pattern pattern =
+    private final Pattern pattern =
         Pattern.compile("(from|into|update)[\\s]{1,}(\\w{1,})", Pattern.CASE_INSENSITIVE);
 
     @Override
@@ -41,7 +41,7 @@ public class DynamicMybatisPlugin implements Interceptor {
         String id = mappedStatement.getId();
         String className = id.substring(0, id.lastIndexOf("."));
         Class<?> clazz = Class.forName(className);
-        DataBaseStrategyRouter dbRouterStrategy = clazz.getAnnotation(DataBaseStrategyRouter.class);
+        TableRouter dbRouterStrategy = clazz.getAnnotation(TableRouter.class);
         if (null == dbRouterStrategy || !dbRouterStrategy.splitTable()) {
             return invocation.proceed();
         }
