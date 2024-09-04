@@ -30,7 +30,7 @@ public class HashDataBaseRouterStrategy implements IDataBaseRouterStrategy {
         int idx = (size - 1) & (val.hashCode() ^ (val.hashCode() >>> 16));
 
         int dbIdx = idx / dataBaseRouterConfig.getTbCount() + 1;
-        int tbIdx = idx % dataBaseRouterConfig.getTbCount() + 1;
+        int tbIdx = idx % dataBaseRouterConfig.getTbCount();
 
         DataBaseContextHolder.setDBKey(String.format("%02d", dbIdx));
         DataBaseContextHolder.setTBKey(String.format("%03d", tbIdx));

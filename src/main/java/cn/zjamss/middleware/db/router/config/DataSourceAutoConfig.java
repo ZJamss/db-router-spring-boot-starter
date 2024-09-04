@@ -7,11 +7,16 @@ import cn.zjamss.middleware.db.router.dynamic.DynamicMybatisPlugin;
 import cn.zjamss.middleware.db.router.strategy.IDataBaseRouterStrategy;
 import cn.zjamss.middleware.db.router.strategy.impl.HashDataBaseRouterStrategy;
 import cn.zjamss.middleware.db.router.util.PropertyUtil;
+import cn.zjamss.middleware.db.router.util.StringUtils;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import javax.sql.DataSource;
 import org.apache.ibatis.plugin.Interceptor;
+import org.apache.ibatis.reflection.MetaObject;
+import org.apache.ibatis.reflection.SystemMetaObject;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -59,23 +64,56 @@ public class DataSourceAutoConfig implements EnvironmentAware {
         return new DynamicMybatisPlugin();
     }
 
+    private DataSource createDataSource(Map<String, Object> attributes) {
+        try {
+            DataSourceProperties dataSourceProperties = new DataSourceProperties();
+            dataSourceProperties.setUrl(attributes.get("url").toString());
+            dataSourceProperties.setUsername(attributes.get("username").toString());
+            dataSourceProperties.setPassword(attributes.get("password").toString());
+
+            String driverClassName =
+                attributes.get("driver-class-name") == null ? "com.zaxxer.hikari.HikariDataSource" :
+                    attributes.get("driver-class-name").toString();
+            dataSourceProperties.setDriverClassName(driverClassName);
+
+            String typeClassName =
+                attributes.get("type-class-name") == null ? "com.zaxxer.hikari.HikariDataSource" :
+                    attributes.get("type-class-name").toString();
+            DataSource ds = dataSourceProperties.initializeDataSourceBuilder()
+                .type((Class<DataSource>) Class.forName(typeClassName)).build();
+
+            MetaObject dsMeta = SystemMetaObject.forObject(ds);
+            Map<String, Object> poolProps =
+                (Map<String, Object>) (attributes.containsKey("pool") ? attributes.get("pool") :
+                    Collections.EMPTY_MAP);
+            for (Map.Entry<String, Object> entry : poolProps.entrySet()) {
+                // 中划线转驼峰
+                String key = StringUtils.middleScoreToCamelCase(entry.getKey());
+                if (dsMeta.hasSetter(key)) {
+                    dsMeta.setValue(key, entry.getValue());
+                }
+            }
+            return ds;
+        } catch (ClassNotFoundException e) {
+            throw new IllegalArgumentException("can not find datasource type class by class name",
+                e);
+        }
+    }
+
     @Bean
     public DataSource dataSource() {
         // 创建数据源
         Map<Object, Object> targetDataSources = new HashMap<>();
         for (String name : dataSourceGroup.keySet()) {
             Map<String, Object> objMap = dataSourceGroup.get(name);
-            targetDataSources.put(name, new DriverManagerDataSource(objMap.get("url").toString(),
-                objMap.get("username").toString(), objMap.get("password").toString()));
+            DataSource ds = createDataSource(objMap);
+            targetDataSources.put(name, ds);
         }
 
         // 设置数据源
         DynamicDataSource dynamicDataSource = new DynamicDataSource();
         dynamicDataSource.setTargetDataSources(targetDataSources);
-        dynamicDataSource.setDefaultTargetDataSource(
-            new DriverManagerDataSource(defaultDataSourceConfig.get("url").toString(),
-                defaultDataSourceConfig.get("username").toString(),
-                defaultDataSourceConfig.get("password").toString()));
+        dynamicDataSource.setDefaultTargetDataSource(createDataSource(defaultDataSourceConfig));
         return dynamicDataSource;
     }
 
